@@ -17,9 +17,17 @@ class KMeans():
         # forma vectorial de calcular la distancia de cada muestra al centroide
         return np.linalg.norm(self.mu[:, np.newaxis] - self.X, axis=2)
     
+    def calculate_distance_squared_error(self) -> float:
+        k : np.ndarray = np.argmin(self.calculate_distances(), axis=0)
+        loss : float = np.sum(np.linalg.norm(self.X - self.mu[k], axis=1) ** 2)
+        return loss
+    
     def fit_centroids(self, max_iterations : int = 250, runs : int = 1) -> np.ndarray:
-        r : np.ndarray = np.zeros(shape=(self.X.shape[0], self.k))
+        best_loss = np.inf
+        best_mu = None
         for t in range(runs):
+            self.mu = self.initialize_centroids()
+            r : np.ndarray = np.zeros(shape=(self.X.shape[0], self.k))
             for i in range(max_iterations):
                 r_old : np.ndarray = r.copy()
                 # for n in range(self.X.shape[0]):
@@ -27,7 +35,7 @@ class KMeans():
                 #     r[n] = np.zeros_like(range(self.k))
                 #     r[n][k] = 1
                 k = np.argmin(self.calculate_distances(), axis=0)
-                r[:] = np.zeros_like(r)
+                r = np.zeros_like(r)
                 r[np.arange(self.X.shape[0]), k] = 1
 
                 # recalculo centroides
@@ -40,6 +48,11 @@ class KMeans():
                 if np.array_equal(r, r_old):
                     print("done at iteration ", i)
                     break
+            loss : float = self.calculate_distance_squared_error()
+            if loss < best_loss:
+                best_loss = loss
+                best_mu = self.mu.copy()
+        self.mu = best_mu
         return self.mu
     
     def plot_clusters_2d(self):
