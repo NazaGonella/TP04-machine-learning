@@ -22,7 +22,7 @@ class KMeans():
         loss : float = np.sum(np.linalg.norm(self.X - self.mu[k], axis=1) ** 2)
         return loss
     
-    def fit_centroids(self, max_iterations : int = 250, runs : int = 1) -> np.ndarray:
+    def fit_centroids(self, max_iterations : int = 250, runs : int = 1, print_iterations : bool = False) -> np.ndarray:
         best_loss = np.inf
         best_mu = None
         for t in range(runs):
@@ -46,7 +46,8 @@ class KMeans():
                     self.mu[k] = np.sum(self.X[r[:, k] == 1], axis=0) / number_of_points_per_cluster[k]
                 # veo si converge
                 if np.array_equal(r, r_old):
-                    print("done at iteration ", i)
+                    if print_iterations:
+                        print("done at iteration ", i)
                     break
             loss : float = self.calculate_distance_squared_error()
             if loss < best_loss:
