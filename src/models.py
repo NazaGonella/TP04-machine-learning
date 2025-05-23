@@ -64,6 +64,15 @@ class KMeans():
         plt.xlabel('A')
         plt.ylabel('B')
 
+class GMM():
+    def __init__(self, X : np.ndarray, k : int):
+        self.k : int = k
+        self.X : np.ndarray = X
+        self.coef : np.ndarray = self.initialize_coefficients()
+
+    def initialize_coefficients(self) -> np.ndarray:
+        mu : np.ndarray = np.array([self.X[np.random.randint(len(self.X))] for _ in range(self.k)])
+        return mu
 
 
 # project_root = os.path.abspath(os.path.join(os.getcwd(), ".."))
