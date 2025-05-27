@@ -1,4 +1,5 @@
 data/raw/MNIST_dataset.csv
 src/__pycache__
+apuntes-gmm.xopp
 venv
 *~
