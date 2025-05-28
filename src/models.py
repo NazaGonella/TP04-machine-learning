@@ -5,12 +5,12 @@ import os
 from matplotlib.patches import Ellipse
 from scipy.stats import multivariate_normal
 
+
 class KMeans():
-    def __init__(self, X : np.ndarray, k : int, seed : int = 42):
+    def __init__(self, X : np.ndarray, k : int):
         self.k : int = k
         self.X : np.ndarray = X
         self.mu : np.ndarray
-        np.random.seed(seed)
     
     def initialize_centroids(self) -> np.ndarray:
         mu : np.ndarray = np.array([self.X[np.random.randint(len(self.X))] for _ in range(self.k)])
@@ -50,7 +50,7 @@ class KMeans():
                 # veo si converge
                 if np.array_equal(r, r_old):
                     if print_iterations:
-                        print("done at iteration ", i)
+                        print("K-MEANS: done at iteration ", i)
                     break
             loss : float = self.calculate_distance_squared_error()
             if loss < best_loss:
@@ -68,13 +68,12 @@ class KMeans():
         plt.ylabel('B')
 
 class GMM():
-    def __init__(self, X : np.ndarray, k : int, seed : int = 42):
+    def __init__(self, X : np.ndarray, k : int):
         self.k : int = k
         self.X : np.ndarray = X
         self.mu : np.ndarray
         self.coef : np.ndarray
         self.cov : np.ndarray
-        np.random.seed(seed)
     
     def initialize_centroids(self) -> np.ndarray:
         mu : np.ndarray = np.array([self.X[np.random.randint(len(self.X))] for _ in range(self.k)])
@@ -94,7 +93,13 @@ class GMM():
         likelihoods = np.sum(weighted_pdfs, axis=0)
         return np.sum(np.log(likelihoods + 1e-10))
     
-    def fit_gaussians(self, use_k_means_centroids : bool = False, max_iterations : int = 250, runs : int = 1, print_iterations : bool = False) -> np.ndarray:
+    def fit_gaussians(
+            self, 
+            use_k_means_centroids : bool = False,
+            max_iterations : int = 250,
+            runs : int = 1,
+            print_iterations : bool = False,
+        ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         best_log_likelihood = -np.inf
         best_mu, best_cov, best_coef = None, None, None
 
@@ -112,6 +117,7 @@ class GMM():
             # EXPECTATION - MAXIMIZATION
             # falta runs
             r_nk : np.ndarray = np.zeros((len(self.X), self.k))
+            r_nk_old : np.ndarray = np.array([])
             for i in range(max_iterations):
                 # E step
                 # for n in range(len(self.X)):
@@ -151,6 +157,15 @@ class GMM():
                     coef_new[k] = N_k / self.X.shape[0]
                 self.mu, self.cov, self.coef = mu_new, cov_new, coef_new
 
+                # veo si converge
+                if len(r_nk_old) > 0:
+                    # if np.array_equal(r_nk, r_nk_old):
+                    if np.allclose(r_nk, r_nk_old, atol=1e-4):
+                        if print_iterations:
+                            print("GMM: done at iteration", i)
+                        break
+                r_nk_old = r_nk.copy()
+
             ll = self.log_likelihood()
             if ll > best_log_likelihood:
                 best_log_likelihood = ll
@@ -174,16 +189,15 @@ class GMM():
         plt.axis('equal')
         plt.show()
 
-class DBScane():
-    def __init__(self, X : np.ndarray, k : int, seed : int = 42):
-        self.k : int = k
+class DBScan():
+    def __init__(self, X : np.ndarray):
         self.X : np.ndarray = X
-        self.mu : np.ndarray
-        np.random.seed(seed)
+    
+    def fit() -> None:
+        pass
 
 
-project_root = os.path.abspath(os.path.join(os.getcwd(), ".."))
-np.random.seed(42)
+# project_root = os.path.abspath(os.path.join(os.getcwd(), ".."))
 
-clustering_df : pd.DataFrame = pd.read_csv(f"{project_root}/TP04/data/raw/clustering.csv").drop(columns=['index'])
-GMM(clustering_df, 10)
+# clustering_df : pd.DataFrame = pd.read_csv(f"{project_root}/TP04/data/raw/clustering.csv").drop(columns=['index'])
+# GMM(clustering_df, 10)
