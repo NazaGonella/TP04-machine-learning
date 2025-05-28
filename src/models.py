@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import os
 from matplotlib.patches import Ellipse
 from scipy.stats import multivariate_normal
-from scipy.spatial import cKDTree
+from scipy.spatial import KDTree
 
 
 class KMeans():
@@ -32,8 +32,8 @@ class KMeans():
             runs : int = 1,
             print_iterations : bool = False,
         ) -> np.ndarray:
-        best_loss = np.inf
-        best_mu = None
+        best_loss : float = np.inf
+        best_mu : np.ndarray = np.array([])
         for t in range(runs):
             self.mu = self.initialize_centroids()
             r : np.ndarray = np.zeros(shape=(self.X.shape[0], self.k))
@@ -108,7 +108,9 @@ class GMM():
         ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
 
         best_log_likelihood = -np.inf
-        best_mu, best_cov, best_coef = None, None, None
+        best_mu : np.ndarray = np.array([])
+        best_cov : np.ndarray = np.array([])
+        best_mu : np.ndarray = np.array([])
 
         for run in range(runs):
             if use_k_means_centroids:
@@ -210,48 +212,53 @@ class DBScan():
     #     closest_neighbors : np.ndarray = candidates[sorted_idx[:min_points]]
     #     return set(map(tuple, closest_neighbors))
 
-    def range_query(self, x : np.ndarray, epsilon : float) -> set[tuple[float]]:
-        tree : cKDTree = cKDTree(self.X)
-        indices : list[int] = tree.query_ball_point(x, r=epsilon)
+    def range_query(self, x : tuple, epsilon : float) -> set[tuple[float]]:
+        tree : KDTree = KDTree(self.X)
+        indices : list[int] = tree.query_ball_point(np.array(x), r=epsilon)
         if len(indices) == 0:
             return set()
         candidates : np.ndarray = self.X[indices]
         return set(map(tuple, candidates))
 
 
-    def fit(
+    def fit_labels(
         self, 
         epsilon : float ,
         min_points : int,
         max_iterations : int = 1000,
         runs : int = 1,
         print_iterations : bool = False,
-    ) -> None:
+    ) -> dict[tuple, int]:
         # LABELS
         #  0 : undefined
         # -1 : noise
         # >0 : clusters 1
-        labels : dict[np.ndarray] = { x : 0 for x in self.X }
+        X : tuple = tuple(map(tuple, self.X))
+        labels : dict[tuple, int] = { x : 0 for x in X }
         c : int = 0
-        for x in self.X:
+        for x in X:
             if labels[x] != 0:
-                neighbors : set[tuple[float]] = self.range_query(x, epsilon)
-                if len(neighbors) < min_points:
-                    labels[x] = -1
-                    continue
-                c += 1
-                labels[x] = c
-                s : set[tuple[float]] = neighbors.copy()
-                s.discard(x)
-                for q in s:
-                    if labels[q] == -1:
-                        labels[q] = c
-                    if labels[q] != 0:
-                        continue
+                continue
+            neighbors : set[tuple[float]] = self.range_query(x, epsilon)
+            if len(neighbors) < min_points:
+                labels[x] = -1
+                continue
+            c += 1
+            labels[x] = c
+            s : set[tuple[float]] = neighbors.copy()
+            s.discard(x)
+            # for q in s:
+            while len(s) > 0:
+                q = s.pop()
+                if labels[q] == -1:
                     labels[q] = c
-                    new_neighbors = self.range_query(q, epsilon)
-                    if len(new_neighbors) >= min_points:
-                        s.add(neighbors)
+                if labels[q] != 0:
+                    continue
+                labels[q] = c
+                new_neighbors = self.range_query(q, epsilon)
+                if len(new_neighbors) >= min_points:
+                    s.update(new_neighbors)
+        return labels
 
 
 
