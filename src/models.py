@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import os
 from matplotlib.patches import Ellipse
 from scipy.stats import multivariate_normal
+from scipy.spatial import cKDTree
 
 
 class KMeans():
@@ -25,7 +26,12 @@ class KMeans():
         loss : float = np.sum(np.linalg.norm(self.X - self.mu[k], axis=1) ** 2)
         return loss
     
-    def fit_centroids(self, max_iterations : int = 250, runs : int = 1, print_iterations : bool = False) -> np.ndarray:
+    def fit_centroids(
+            self,
+            max_iterations : int = 250,
+            runs : int = 1,
+            print_iterations : bool = False,
+        ) -> np.ndarray:
         best_loss = np.inf
         best_mu = None
         for t in range(runs):
@@ -100,6 +106,7 @@ class GMM():
             runs : int = 1,
             print_iterations : bool = False,
         ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+
         best_log_likelihood = -np.inf
         best_mu, best_cov, best_coef = None, None, None
 
@@ -185,7 +192,6 @@ class GMM():
             width, height = 2 * np.sqrt(eigenvalues)
             ellipse = Ellipse(xy=self.mu[k], width=width, height=height, angle=angle, edgecolor='blue', fc='None', lw=2)
             plt.gca().add_patch(ellipse)
-
         plt.axis('equal')
         plt.show()
 
@@ -193,8 +199,37 @@ class DBScan():
     def __init__(self, X : np.ndarray):
         self.X : np.ndarray = X
     
-    def fit() -> None:
-        pass
+    def get_closest_points(self, x: np.ndarray, epsilon: float, min_points: int) -> np.ndarray:
+        tree : cKDTree = cKDTree(self.X)
+        indices : list[int] = tree.query_ball_point(x, r=epsilon)
+        if len(indices) == 0:
+            return np.array([], dtype=int)
+        candidates : np.ndarray = self.X[indices]
+        distances : np.ndarray = np.linalg.norm(candidates - x, axis=1)
+        sorted_idx : np.ndarray = np.argsort(distances)
+        closest_indices : np.ndarray = np.array(indices, dtype=int)[sorted_idx[:min_points]]
+        return closest_indices
+
+    def fit(
+        self, 
+        epsilon : float ,
+        min_points : int,
+        max_iterations : int = 1000,
+        runs : int = 1,
+        print_iterations : bool = False,
+    ) -> None:
+        # LABELS
+        #  0 : undefined
+        # -1 : noise
+        # >0 : clusters 1
+        labels : dict[np.ndarray] = { x : 0 for x in self.X}
+        c : int = 0
+        for x in self.X:
+            if labels[x] != 0:
+                neighbors_index : list[int] = self.get_closest_points(x, epsilon)
+                if len(neighbors_index) < min_points:
+                    labels[x] = -1
+                    continue
 
 
 # project_root = os.path.abspath(os.path.join(os.getcwd(), ".."))
