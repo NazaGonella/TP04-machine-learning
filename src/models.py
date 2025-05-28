@@ -174,6 +174,12 @@ class GMM():
         plt.axis('equal')
         plt.show()
 
+class DBScane():
+    def __init__(self, X : np.ndarray, k : int, seed : int = 42):
+        self.k : int = k
+        self.X : np.ndarray = X
+        self.mu : np.ndarray
+        np.random.seed(seed)
 
 
 project_root = os.path.abspath(os.path.join(os.getcwd(), ".."))
