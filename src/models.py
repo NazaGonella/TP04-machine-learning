@@ -199,16 +199,25 @@ class DBScan():
     def __init__(self, X : np.ndarray):
         self.X : np.ndarray = X
     
-    def get_closest_points(self, x: np.ndarray, epsilon: float, min_points: int) -> np.ndarray:
+    # def get_closest_points(self, x : np.ndarray, epsilon : float, min_points : int) -> set[tuple[float]]:
+    #     tree : cKDTree = cKDTree(self.X)
+    #     indices : list[int] = tree.query_ball_point(x, r=epsilon)
+    #     if len(indices) == 0:
+    #         return set()
+    #     candidates : np.ndarray = self.X[indices]
+    #     distances : np.ndarray = np.linalg.norm(candidates - x, axis=1)
+    #     sorted_idx : np.ndarray = np.argsort(distances)
+    #     closest_neighbors : np.ndarray = candidates[sorted_idx[:min_points]]
+    #     return set(map(tuple, closest_neighbors))
+
+    def range_query(self, x : np.ndarray, epsilon : float) -> set[tuple[float]]:
         tree : cKDTree = cKDTree(self.X)
         indices : list[int] = tree.query_ball_point(x, r=epsilon)
         if len(indices) == 0:
-            return np.array([], dtype=int)
+            return set()
         candidates : np.ndarray = self.X[indices]
-        distances : np.ndarray = np.linalg.norm(candidates - x, axis=1)
-        sorted_idx : np.ndarray = np.argsort(distances)
-        closest_indices : np.ndarray = np.array(indices, dtype=int)[sorted_idx[:min_points]]
-        return closest_indices
+        return set(map(tuple, candidates))
+
 
     def fit(
         self, 
@@ -222,14 +231,28 @@ class DBScan():
         #  0 : undefined
         # -1 : noise
         # >0 : clusters 1
-        labels : dict[np.ndarray] = { x : 0 for x in self.X}
+        labels : dict[np.ndarray] = { x : 0 for x in self.X }
         c : int = 0
         for x in self.X:
             if labels[x] != 0:
-                neighbors_index : list[int] = self.get_closest_points(x, epsilon)
-                if len(neighbors_index) < min_points:
+                neighbors : set[tuple[float]] = self.range_query(x, epsilon)
+                if len(neighbors) < min_points:
                     labels[x] = -1
                     continue
+                c += 1
+                labels[x] = c
+                s : set[tuple[float]] = neighbors.copy()
+                s.discard(x)
+                for q in s:
+                    if labels[q] == -1:
+                        labels[q] = c
+                    if labels[q] != 0:
+                        continue
+                    labels[q] = c
+                    new_neighbors = self.range_query(q, epsilon)
+                    if len(new_neighbors) >= min_points:
+                        s.add(neighbors)
+
 
 
 # project_root = os.path.abspath(os.path.join(os.getcwd(), ".."))
