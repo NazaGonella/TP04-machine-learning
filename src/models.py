@@ -6,10 +6,11 @@ from matplotlib.patches import Ellipse
 from scipy.stats import multivariate_normal
 
 class KMeans():
-    def __init__(self, X : np.ndarray, k : int):
+    def __init__(self, X : np.ndarray, k : int, seed : int = 42):
         self.k : int = k
         self.X : np.ndarray = X
         self.mu : np.ndarray
+        np.random.seed(seed)
     
     def initialize_centroids(self) -> np.ndarray:
         mu : np.ndarray = np.array([self.X[np.random.randint(len(self.X))] for _ in range(self.k)])
@@ -67,12 +68,13 @@ class KMeans():
         plt.ylabel('B')
 
 class GMM():
-    def __init__(self, X : np.ndarray, k : int):
+    def __init__(self, X : np.ndarray, k : int, seed : int = 42):
         self.k : int = k
         self.X : np.ndarray = X
         self.mu : np.ndarray
         self.coef : np.ndarray
         self.cov : np.ndarray
+        np.random.seed(seed)
     
     def initialize_centroids(self) -> np.ndarray:
         mu : np.ndarray = np.array([self.X[np.random.randint(len(self.X))] for _ in range(self.k)])
@@ -141,7 +143,8 @@ class GMM():
                     diff = self.X - mu_new[k]
                     # sigma_k = (1/ N_k) * np.sum(r_nk[:, k] *((self.X - mu_k) @ (self.X - mu_k).T))
                     diff = self.X - mu_new[k]
-                    cov_new[k] = (1 / N_k) * np.einsum('ni,nj->ij', r_nk[:, k][:, None] * diff, diff)
+                    # cov_new[k] = (1 / N_k) * np.einsum('ni,nj->ij', r_nk[:, k][:, None] * diff, diff)
+                    cov_new[k] = (1 / N_k) * np.einsum('ni,nj->ij', diff * r_nk[:, k][:, None], diff)
                     # diff = self.X - mu_k
                     # weighted_diff = r_nk[:, k][:, None] * diff
                     # sigma_k = np.dot(weighted_diff.T, diff) / N_k
