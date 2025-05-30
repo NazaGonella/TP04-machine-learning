@@ -276,7 +276,31 @@ class DBScan():
         plt.legend()
         plt.show()
 
-
+class PCA:
+    def __init__(self, X : np.ndarray):
+        self.X : np.ndarray = X
+        self.mean : float = np.mean(X, axis=0, keepdims=True)
+        self.X_low_dim : np.ndarray
+        self.X_reconstruction : np.ndarray
+    
+    # k: Dimensiones asociadas a los autovalores más bajos para quitar.
+    def reduce_dimensionality(self, k : int) -> None:
+        if k > self.X.shape[1]:
+            print("Se quitan más componentes de las que hay")
+            return
+        X_centered : np.ndarray = self.X - self.mean
+        X_centered_covariance : np.ndarray = (X_centered.T @ X_centered) / len(self.X)
+        X_cov_eigvec : np.ndarray
+        X_cov_eigval : np.ndarray
+        X_cov_eigval, X_cov_eigvec = np.linalg.eigh(X_centered_covariance)
+        greatest_k_indices : np.ndarray = np.argsort(X_cov_eigval)[k:]
+        X_low_dim : np.ndarray = X_centered @ X_cov_eigvec[:, greatest_k_indices]
+        self.X_low_dim = X_low_dim
+        self.X_reconstruction = (X_low_dim @ X_cov_eigvec[:, greatest_k_indices].T) + self.mean
+    
+    def get_reconstruction_MSE(self) -> float:
+        squared_errors : np.ndarray = (self.X - self.X_reconstruction) ** 2
+        return np.mean(squared_errors, dtype=float)
 
 # project_root = os.path.abspath(os.path.join(os.getcwd(), ".."))
 

@@ -1,0 +1,2 @@
+En esta parte, se analizaron tres métodos de clústering de aprendizaje no supervisado, siendo K-means, Gaussian Mixture Models, y DBScan. En el caso de K-means y GMM se evalúan varias veces los algoritmos (runs) y se conserva el modelo con mejores resultados en sus respectivas funciones de pérdida (distance squared error y log likelihood).
+Para llevar a cabo el análisis, se utilizó el set de datos clustering.csv, que cuenta con 4999 muestras de 2 componentes.
