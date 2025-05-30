@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import os
+from matplotlib.cm import get_cmap
 from matplotlib.patches import Ellipse
 from scipy.stats import multivariate_normal
 from scipy.spatial import KDTree
@@ -67,7 +68,7 @@ class KMeans():
     
     def plot_clusters_2d(self):
         k = np.argmin(self.calculate_distances(), axis=0)
-        plt.scatter(self.X[:, 0], self.X[:, 1], c=k, cmap='tab10', s=10, alpha=1)
+        plt.scatter(self.X[:, 0], self.X[:, 1], c=k, cmap='tab20', s=10, alpha=1)
         plt.scatter(self.mu[:, 0], self.mu[:, 1], c='red', marker='x', s=50)
         plt.title(f'K-Means (k = {self.k})')
         plt.xlabel('A')
@@ -200,6 +201,7 @@ class GMM():
 class DBScan():
     def __init__(self, X : np.ndarray):
         self.X : np.ndarray = X
+        self.labels : dict[int, int]
     
     # def get_closest_points(self, x : np.ndarray, epsilon : float, min_points : int) -> set[tuple[float]]:
     #     tree : cKDTree = cKDTree(self.X)
@@ -212,13 +214,12 @@ class DBScan():
     #     closest_neighbors : np.ndarray = candidates[sorted_idx[:min_points]]
     #     return set(map(tuple, closest_neighbors))
 
-    def range_query(self, x : tuple, epsilon : float) -> set[tuple[float]]:
+    def range_query(self, x_i : int, epsilon : float) -> set[int]:
         tree : KDTree = KDTree(self.X)
-        indices : list[int] = tree.query_ball_point(np.array(x), r=epsilon)
+        indices : list[int] = tree.query_ball_point(self.X[x_i], r=epsilon)
         if len(indices) == 0:
-            return set()
-        candidates : np.ndarray = self.X[indices]
-        return set(map(tuple, candidates))
+            set()
+        return set(indices)
 
 
     def fit_labels(
@@ -228,37 +229,52 @@ class DBScan():
         max_iterations : int = 1000,
         runs : int = 1,
         print_iterations : bool = False,
-    ) -> dict[tuple, int]:
+    ) -> dict[int, int]:
         # LABELS
         #  0 : undefined
         # -1 : noise
         # >0 : clusters 1
-        X : tuple = tuple(map(tuple, self.X))
-        labels : dict[tuple, int] = { x : 0 for x in X }
+        self.labels = { i : 0 for i in range(len(self.X)) }
         c : int = 0
-        for x in X:
-            if labels[x] != 0:
+        for x_i in range(len(self.X)):
+            if self.labels[x_i] != 0:
                 continue
-            neighbors : set[tuple[float]] = self.range_query(x, epsilon)
+            neighbors : set[int] = self.range_query(x_i, epsilon)
             if len(neighbors) < min_points:
-                labels[x] = -1
+                self.labels[x_i] = -1
                 continue
             c += 1
-            labels[x] = c
-            s : set[tuple[float]] = neighbors.copy()
-            s.discard(x)
+            self.labels[x_i] = c
+            s : set[int] = neighbors.copy()
+            s.discard(x_i)
             # for q in s:
             while len(s) > 0:
                 q = s.pop()
-                if labels[q] == -1:
-                    labels[q] = c
-                if labels[q] != 0:
+                if self.labels[q] == -1:
+                    self.labels[q] = c
+                if self.labels[q] != 0:
                     continue
-                labels[q] = c
+                self.labels[q] = c
                 new_neighbors = self.range_query(q, epsilon)
                 if len(new_neighbors) >= min_points:
                     s.update(new_neighbors)
-        return labels
+        return self.labels
+    
+    def plot_dbscan(self):
+        unique_labels = set(self.labels.values())
+        colors = get_cmap("tab20b", len(unique_labels))
+
+        for label in unique_labels:
+            indices = [i for i, l in self.labels.items() if l == label]
+            cluster_points = self.X[indices]
+            if label == -1:
+                plt.scatter(cluster_points[:, 0], cluster_points[:, 1], s=5, c='k', alpha=0.2, label='noise')
+            else:
+                plt.scatter(cluster_points[:, 0], cluster_points[:, 1], s=10, color=colors(label - 1))
+        
+        plt.axis('equal')
+        plt.legend()
+        plt.show()
 
 
 
