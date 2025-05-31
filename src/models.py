@@ -70,7 +70,7 @@ class KMeans():
         k = np.argmin(self.calculate_distances(), axis=0)
         plt.scatter(self.X[:, 0], self.X[:, 1], c=k, cmap='tab20', s=10, alpha=1)
         plt.scatter(self.mu[:, 0], self.mu[:, 1], c='red', marker='x', s=50)
-        plt.title(f'K-Means (k = {self.k})')
+        # plt.title(f'K-Means (k = {self.k})')
         plt.xlabel('A')
         plt.ylabel('B')
 
@@ -196,6 +196,8 @@ class GMM():
             ellipse = Ellipse(xy=self.mu[k], width=width, height=height, angle=angle, edgecolor='blue', fc='None', lw=2)
             plt.gca().add_patch(ellipse)
         plt.axis('equal')
+        plt.xlabel('A')
+        plt.ylabel('B')
         plt.show()
 
 class DBScan():
@@ -262,7 +264,7 @@ class DBScan():
     
     def plot_dbscan(self):
         unique_labels = set(self.labels.values())
-        colors = get_cmap("tab20b", len(unique_labels))
+        colors = get_cmap("tab20", len(unique_labels))
 
         for label in unique_labels:
             indices = [i for i, l in self.labels.items() if l == label]
@@ -273,6 +275,23 @@ class DBScan():
                 plt.scatter(cluster_points[:, 0], cluster_points[:, 1], s=10, color=colors(label - 1))
         
         plt.axis('equal')
+        plt.xlabel('A')
+        plt.ylabel('B')
+        plt.legend()
+        plt.show()
+    
+    def plot_k_distance(self, min_points : int):
+        tree : KDTree = KDTree(self.X)
+        k_distances = []
+        for point in self.X:
+            distances, _ = tree.query(point, k=min_points + 1)
+            k_distances.append(distances[-1])
+        k_distances = np.sort(k_distances)
+        plt.plot(k_distances)
+        plt.grid(True)
+        plt.xlabel("Puntos ordenados")
+        plt.ylabel(f"{min_points}-ésima distancia")
+        plt.axhspan(0.05, 0.10, color='red', alpha=0.3, label='Rango ε')
         plt.legend()
         plt.show()
 
